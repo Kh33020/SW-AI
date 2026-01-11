@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="th" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI ปัญญาประดิษฐ์แนะนำอาหารผู้ป่วยเบาหวาน</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+        body {
+            box-sizing: border-box;
+        }
+        
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Kanit', sans-serif;
+        }
+        
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .chat-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            padding-bottom: 120px;
+        }
+        
+        .input-area {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 2px solid #e5e7eb;
+            padding: 20px;
+            z-index: 10;
+        }
+        
+        .message-bubble {
+            animation: fadeInUp 0.4s ease-out;
+            margin-bottom: 16px;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .typing-indicator {
+            display: none;
+        }
+        
+        .typing-indicator.active {
+            display: flex;
+            animation: fadeInUp 0.4s ease-out;
+        }
+        
+        .typing-dot {
+            width: 10px;
+            height: 10px;
+            background: #94a3b8;
+            border-radius: 50%;
+            margin: 0 3px;
+            animation: typingBounce 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typingBounce {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-12px);
+            }
+        }
+        
+        .scroll-smooth {
+            scroll-behavior: smooth;
+        }
+        
+        /* Improved scrollbar */
+        .messages-area::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .messages-area::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        
+        .messages-area::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        .messages-area::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full">
+  <div class="chat-container w-full" style="background: linear-gradient(135deg, #e0f2fe 0%, #fce7f3 100%);"><!-- Messages Area -->
+   <div class="messages-area scroll-smooth" id="messagesArea"><!-- Welcome Message -->
+    <div class="message-bubble">
+     <div class="flex items-start gap-3">
+      <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style="background: #ec4899;">
+       <svg class="w-7 h-7 text-white" fill="currentColor" viewbox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+       </svg>
+      </div>
+      <div class="bg-white rounded-3xl rounded-tl-none px-6 py-4 shadow-lg max-w-md">
+       <p class="text-gray-800 leading-relaxed" id="welcomeText" style="font-size: 18px;">สวัสดีค่ะ ฉันคือผู้ช่วย AI ผู้เชี่ยวชาญด้านโภชนาการสำหรับผู้ป่วยเบาหวานผู้สูงอายุ 💚 พร้อมให้คำแนะนำเกี่ยวกับอาหารที่ปลอดภัยและเหมาะสมกับคุณค่ะ</p>
+      </div>
+     </div>
+    </div><!-- Typing Indicator -->
+    <div class="typing-indicator" id="typingIndicator">
+     <div class="flex items-start gap-3">
+      <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style="background: #ec4899;">
+       <svg class="w-7 h-7 text-white" fill="currentColor" viewbox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+       </svg>
+      </div>
+      <div class="bg-white rounded-3xl rounded-tl-none px-6 py-4 shadow-lg">
+       <div class="flex gap-1">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div><!-- Input Area -->
+   <div class="input-area">
+    <form id="chatForm" onsubmit="handleSubmit(event)" class="flex items-center gap-3 max-w-4xl mx-auto"><label for="messageInput" class="sr-only">พิมพ์ข้อความของคุณ</label> <input type="text" id="messageInput" placeholder="ค้นหา..." class="flex-1 px-6 py-4 border-2 rounded-full focus:outline-none focus:ring-2 transition-all" style="border-color: #0cc0df; font-size: 18px;" autocomplete="off" required> <button type="submit" id="sendButton" class="px-8 py-4 text-white rounded-full font-medium transition-all hover:opacity-90 active:scale-95" style="background: #0cc0df; font-size: 18px;"> <span id="buttonText">ส่ง</span> </button>
+    </form>
+   </div>
+  </div>
+  <script>
+        const GEMINI_API_KEY = 'AIzaSyAboz5aMYJ3aCw0_R4XBqa03flcLZ7-xBo';
+        const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+        
+        const defaultConfig = {
+            primary_color: '#0cc0df',
+            accent_color: '#ec4899',
+            background_start: '#e0f2fe',
+            background_end: '#fce7f3',
+            text_color: '#1f2937',
+            font_family: 'Kanit',
+            font_size: 18,
+            app_title: 'AI ปัญญาประดิษฐ์แนะนำอาหารผู้ป่วยเบาหวาน',
+            welcome_message: 'สวัสดีค่ะ ฉันคือผู้ช่วย AI ผู้เชี่ยวชาญด้านโภชนาการสำหรับผู้ป่วยเบาหวานผู้สูงอายุ 💚 พร้อมให้คำแนะนำเกี่ยวกับอาหารที่ปลอดภัยและเหมาะสมกับคุณค่ะ',
+            input_placeholder: 'ค้นหา...',
+            button_text: 'ส่ง'
+        };
+        
+        const SYSTEM_PROMPT = `คุณคือผู้เชี่ยวชาญด้านโภชนาการสำหรับผู้ป่วยเบาหวาน คุณต้องเข้าใจและจดจำเสมอว่าผู้ใช้งานทุกคนที่คุยกับคุณคือผู้ป่วยเบาหวานที่เป็นผู้สูงอายุ และคุณต้องให้คำแนะนำที่ปลอดภัยและเหมาะสมกับภาวะสุขภาพของพวกเขา
+
+หน้าที่หลัก:
+- แนะนำอาหาร: ให้ข้อมูลเกี่ยวกับอาหารที่ผู้ป่วยเบาหวานสามารถกินได้ รวมถึงปริมาณที่เหมาะสม
+- ให้คำแนะนำเชิงโภชนาการ: อธิบายคุณค่าทางอาหารของเมนูต่างๆ เช่น ปริมาณคาร์โบไฮเดรต น้ำตาล หรือใยอาหาร
+- ตอบคำถามทั่วไป: ตอบคำถามที่เกี่ยวข้องกับอาหารและโภชนาการสำหรับผู้ป่วยเบาหวานด้วยความรู้ที่แม่นยำและเข้าใจง่าย
+- ให้คำเตือนที่สำคัญ: หากมีเมนูหรือส่วนผสมใดที่มีความเสี่ยงต่อผู้ป่วยเบาหวาน คุณต้องเตือนและให้ข้อมูลทางเลือกอื่นที่ปลอดภัย
+
+หลักการตอบ:
+- ให้ข้อมูลที่ชัดเจนและเข้าใจง่าย มีความกระชับ
+- มีความน่าเชื่อถือและอ้างอิงข้อมูลทางโภชนาการที่ถูกต้อง
+- ไม่ตัดสินหรือตำหนิผู้ใช้งาน
+- ตอบเป็นภาษาไทยเสมอ
+- ใช้น้ำเสียงที่อ่อนโยน เป็นมิตร และให้กำลังใจ
+
+ตัวอย่างการตอบสนอง:
+เมื่อผู้ใช้ถามว่า "อยากกินก๋วยเตี๋ยวเรือ กินได้ไหม?"
+คุณควรตอบว่า "ก๋วยเตี๋ยวเรือสามารถทานได้ค่ะ แต่ควรระวังปริมาณเส้นและน้ำซุปที่อาจมีรสหวานนะคะ แนะนำให้เลือกเส้นน้อยๆ และซดน้ำซุปแต่น้อยค่ะ"
+
+เมื่อผู้ใช้ถามว่า "กินทุเรียนได้มั้ย?"
+คุณควรตอบว่า "ทุเรียนมีน้ำตาลสูงมาก ไม่แนะนำให้ทานในปริมาณมากค่ะ หากอยากทานจริงๆ ควรทานแค่ 1-2 พูเล็กๆ และควรลดปริมาณคาร์โบไฮเดรตในมื้ออื่นๆ ลงนะคะ"`;
+        
+        async function callGeminiAPI(userMessage) {
+            try {
+                const response = await fetch(GEMINI_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-goog-api-key': GEMINI_API_KEY
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: `${SYSTEM_PROMPT}\n\nคำถามจากผู้ใช้: ${userMessage}`
+                            }]
+                        }],
+                        generationConfig: {
+                            temperature: 0.7,
+                            topK: 40,
+                            topP: 0.95,
+                            maxOutputTokens: 1024
+                        }
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                    return data.candidates[0].content.parts[0].text;
+                } else {
+                    throw new Error('ไม่สามารถรับคำตอบจาก AI ได้');
+                }
+            } catch (error) {
+                console.error('Gemini API Error:', error);
+                return 'ขออภัยค่ะ เกิดข้อผิดพลาดในการเชื่อมต่อกับ AI กรุณาลองใหม่อีกครั้งค่ะ 🙏';
+            }
+        }
+        
+        function addMessage(text, isUser = false) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message-bubble';
+            
+            const config = window.elementSdk?.config || defaultConfig;
+            const primaryColor = config.primary_color || defaultConfig.primary_color;
+            const accentColor = config.accent_color || defaultConfig.accent_color;
+            const textColor = config.text_color || defaultConfig.text_color;
+            const fontSize = config.font_size || defaultConfig.font_size;
+            
+            if (isUser) {
+                messageDiv.innerHTML = `
+                    <div class="flex items-start gap-3 justify-end">
+                        <div class="rounded-3xl rounded-tr-none px-6 py-4 shadow-lg max-w-md text-white" style="background: ${primaryColor};">
+                            <p class="leading-relaxed" style="font-size: ${fontSize}px; color: white;">${escapeHtml(text)}</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style="background: ${primaryColor};">
+                            <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                        </div>
+                    </div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style="background: ${accentColor};">
+                            <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                        </div>
+                        <div class="bg-white rounded-3xl rounded-tl-none px-6 py-4 shadow-lg max-w-md">
+                            <p class="leading-relaxed" style="font-size: ${fontSize}px; color: ${textColor};">${escapeHtml(text)}</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            messagesArea.insertBefore(messageDiv, document.getElementById('typingIndicator'));
+            scrollToBottom();
+        }
+        
+        function showTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            indicator.classList.add('active');
+            scrollToBottom();
+        }
+        
+        function hideTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            indicator.classList.remove('active');
+        }
+        
+        function scrollToBottom() {
+            const messagesArea = document.getElementById('messagesArea');
+            setTimeout(() => {
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+            }, 100);
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        async function handleSubmit(event) {
+            event.preventDefault();
+            
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            addMessage(message, true);
+            input.value = '';
+            
+            showTypingIndicator();
+            
+            try {
+                const response = await callGeminiAPI(message);
+                hideTypingIndicator();
+                addMessage(response, false);
+            } catch (error) {
+                hideTypingIndicator();
+                addMessage('ขออภัยค่ะ เกิดข้อผิดพลาดในการเชื่อมต่อกับ AI กรุณาลองใหม่อีกครั้งค่ะ 🙏', false);
+            }
+        }
+        
+        async function onConfigChange(config) {
+            const chatContainer = document.querySelector('.chat-container');
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            const welcomeText = document.getElementById('welcomeText');
+            const buttonText = document.getElementById('buttonText');
+            
+            const primaryColor = config.primary_color || defaultConfig.primary_color;
+            const accentColor = config.accent_color || defaultConfig.accent_color;
+            const bgStart = config.background_start || defaultConfig.background_start;
+            const bgEnd = config.background_end || defaultConfig.background_end;
+            const textColor = config.text_color || defaultConfig.text_color;
+            const customFont = config.font_family || defaultConfig.font_family;
+            const fontSize = config.font_size || defaultConfig.font_size;
+            
+            chatContainer.style.background = `linear-gradient(135deg, ${bgStart} 0%, ${bgEnd} 100%)`;
+            
+            messageInput.style.borderColor = primaryColor;
+            messageInput.style.fontSize = `${fontSize}px`;
+            messageInput.placeholder = config.input_placeholder || defaultConfig.input_placeholder;
+            
+            sendButton.style.background = primaryColor;
+            sendButton.style.fontSize = `${fontSize}px`;
+            
+            buttonText.textContent = config.button_text || defaultConfig.button_text;
+            
+            welcomeText.textContent = config.welcome_message || defaultConfig.welcome_message;
+            welcomeText.style.fontSize = `${fontSize}px`;
+            welcomeText.style.color = textColor;
+            
+            document.body.style.fontFamily = `'${customFont}', sans-serif`;
+            
+            const allText = document.querySelectorAll('p, input, button, span');
+            allText.forEach(el => {
+                el.style.fontFamily = `'${customFont}', sans-serif`;
+            });
+        }
+        
+        function mapToCapabilities(config) {
+            return {
+                recolorables: [
+                    {
+                        get: () => config.primary_color || defaultConfig.primary_color,
+                        set: (value) => {
+                            config.primary_color = value;
+                            window.elementSdk.setConfig({ primary_color: value });
+                        }
+                    },
+                    {
+                        get: () => config.accent_color || defaultConfig.accent_color,
+                        set: (value) => {
+                            config.accent_color = value;
+                            window.elementSdk.setConfig({ accent_color: value });
+                        }
+                    },
+                    {
+                        get: () => config.background_start || defaultConfig.background_start,
+                        set: (value) => {
+                            config.background_start = value;
+                            window.elementSdk.setConfig({ background_start: value });
+                        }
+                    },
+                    {
+                        get: () => config.background_end || defaultConfig.background_end,
+                        set: (value) => {
+                            config.background_end = value;
+                            window.elementSdk.setConfig({ background_end: value });
+                        }
+                    },
+                    {
+                        get: () => config.text_color || defaultConfig.text_color,
+                        set: (value) => {
+                            config.text_color = value;
+                            window.elementSdk.setConfig({ text_color: value });
+                        }
+                    }
+                ],
+                borderables: [],
+                fontEditable: {
+                    get: () => config.font_family || defaultConfig.font_family,
+                    set: (value) => {
+                        config.font_family = value;
+                        window.elementSdk.setConfig({ font_family: value });
+                    }
+                },
+                fontSizeable: {
+                    get: () => config.font_size || defaultConfig.font_size,
+                    set: (value) => {
+                        config.font_size = value;
+                        window.elementSdk.setConfig({ font_size: value });
+                    }
+                }
+            };
+        }
+        
+        function mapToEditPanelValues(config) {
+            return new Map([
+                ['app_title', config.app_title || defaultConfig.app_title],
+                ['welcome_message', config.welcome_message || defaultConfig.welcome_message],
+                ['input_placeholder', config.input_placeholder || defaultConfig.input_placeholder],
+                ['button_text', config.button_text || defaultConfig.button_text]
+            ]);
+        }
+        
+        if (window.elementSdk) {
+            window.elementSdk.init({
+                defaultConfig,
+                onConfigChange,
+                mapToCapabilities,
+                mapToEditPanelValues
+            });
+        }
+        
+        scrollToBottom();
+    </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9bc469f3a2b5558c',t:'MTc2ODEzNDUwNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
